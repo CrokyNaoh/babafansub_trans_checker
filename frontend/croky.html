@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>項目管理界面 - 霸霸組繁中工具</title>
+    <link rel="stylesheet" href="/transtool-py/css/style.css">
+    <link rel="stylesheet" href="/transtool-py/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>🔧 項目管理界面</h1>
+            <p>霸霸組繁中工具 - 管理員控制台</p>
+        </header>
+
+        <div class="projects-section">
+            <div class="stats" id="statsContainer">
+                <h3>📊 項目統計</h3>
+                <p id="statsText">載入中...</p>
+            </div>
+
+            <div class="admin-controls">
+                <button class="refresh-btn" onclick="loadProjects()">🔄 刷新項目列表</button>
+                <button class="reload-config-btn" onclick="reloadConfig()">⚙️ 重新加載配置</button>
+            </div>
+
+            <div id="errorContainer" class="error" style="display: none;">
+                <strong>❌ 載入失敗：</strong>
+                <span id="errorMessage"></span>
+            </div>
+
+            <div id="loadingContainer" class="loading">
+                <h3>⏳ 正在載入項目列表...</h3>
+                <p>請稍候</p>
+            </div>
+
+            <div id="projectsContainer" class="projects-grid" style="display: none;">
+                <!-- 項目卡片將在這裡動態生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/transtool-py/js/projectlist.js"></script>
+</body>
+</html>

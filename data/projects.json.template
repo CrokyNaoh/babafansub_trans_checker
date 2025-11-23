@@ -1,0 +1,11 @@
+{
+  "projects": {
+    "template": {
+      "name": "項目名",
+      "description": "描述",
+      "tags": ["tag1"],
+      "termDict": "termDict_template.json"
+    }
+  }
+}
+

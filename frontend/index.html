@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>霸霸組繁中工具</title>
+    <link rel="stylesheet" href="/transtool-py/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="projectName">霸霸組繁中工具</h1>
+            <p class="project-description" id="projectDescription"></p>
+            <p class="subtitle" id="projectInfo">載入中...</p>
+        </header>
+
+        <div class="notice">
+            <p>⚠️ 請關閉表格中所有篩選</p>
+            <p>⚠️ 檢查會默認跳過首行</p>
+        </div>
+
+        <div class="control-panel">
+            <!-- 功能选择 -->
+            <div class="form-group">
+                <label for="checkMode">選擇功能：</label>
+                <select id="checkMode" class="form-control">
+                    <option value="common">檢查易錯字詞</option>
+                    <option value="spec">標註統一詞</option>
+                </select>
+            </div>
+
+            <!-- 文件选择 -->
+            <div class="form-group">
+                <label for="fileInput">選擇 Excel 文件：</label>
+                <input type="file" id="fileInput" class="form-control" accept=".xlsx">
+                <span class="file-name" id="fileName">未選擇文件</span>
+            </div>
+
+            <!-- 输入列 -->
+            <div class="form-group">
+                <label for="inputCol" id="inputColLabel">待檢查翻譯列號 (A~Z)：</label>
+                <input type="text" id="inputCol" class="form-control col-input" placeholder="C" maxlength="1">
+            </div>
+
+            <!-- 输出列1 -->
+            <div class="form-group">
+                <label for="outputCol1" id="outputCol1Label">提示使用列 (A~Z)：</label>
+                <input type="text" id="outputCol1" class="form-control col-input" placeholder="E" maxlength="1">
+            </div>
+
+            <!-- 输出列2 (仅 common 模式) -->
+            <div class="form-group" id="outputCol2Group">
+                <label for="outputCol2">提示使用列其二 (A~Z)：</label>
+                <input type="text" id="outputCol2" class="form-control col-input" placeholder="F" maxlength="1">
+            </div>
+
+            <!-- 工作表范围 -->
+            <div class="form-group">
+                <label>工作表範圍：</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="sheetType" value="0" checked>
+                        僅檢查第一個工作表
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="sheetType" value="1">
+                        檢查所有工作表
+                    </label>
+                </div>
+            </div>
+
+            <!-- 易塞翻词 (仅 spec 模式) -->
+            <div class="form-group" id="extraHintGroup" style="display: none;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="extraHint">
+                    提示易塞翻詞
+                </label>
+            </div>
+
+            <!-- 开始检查按钮 -->
+            <button id="checkBtn" class="btn-primary">開始檢查</button>
+
+            <!-- 进度条 -->
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+                <div class="progress-text" id="progressText">處理中...</div>
+            </div>
+
+            <!-- 消息提示 -->
+            <div class="message" id="message"></div>
+        </div>
+    </div>
+
+    <!-- 错误页面（无效项目） -->
+    <div class="error-container" id="errorContainer" style="display: none;">
+        <div class="error-content">
+            <h1>❌ 無效的訪問鏈接</h1>
+            <p>請使用正確的鏈接訪問本工具</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="/transtool-py/js/main.js"></script>
+</body>
+</html>
+
+
