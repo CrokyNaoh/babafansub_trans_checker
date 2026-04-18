@@ -92,9 +92,23 @@ async function loadProjects() {
  * @param {Object} projects - 項目數據對象
  */
 function renderProjects(projects) {
-    const projectIds = Object.keys(projects);
+    const projectEntries = Object.entries(projects);
+    const prioritizedEntries = [];
+    const defaultEntries = [];
+
+    projectEntries.forEach(([projectId, project]) => {
+        const priority = normalizePriority(project);
+        if (priority > 0) {
+            prioritizedEntries.push({ projectId, project, priority });
+        } else {
+            defaultEntries.push({ projectId, project, priority: 0 });
+        }
+    });
+
+    prioritizedEntries.sort((a, b) => a.priority - b.priority);
+    const sortedEntries = [...prioritizedEntries, ...defaultEntries];
     
-    if (projectIds.length === 0) {
+    if (sortedEntries.length === 0) {
         projectsContainer.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">
                 <h3>📭 暫無項目</h3>
@@ -102,14 +116,31 @@ function renderProjects(projects) {
             </div>
         `;
     } else {
-        projectsContainer.innerHTML = projectIds.map(projectId => {
-            const project = projects[projectId];
+        projectsContainer.innerHTML = sortedEntries.map(({ projectId, project }) => {
             return createProjectCard(projectId, project);
         }).join('');
     }
 
     hideLoading();
     showProjects();
+}
+
+/**
+ * 规范化 priority 数值
+ * @param {Object} project - 项目信息
+ * @returns {number} 标准化后的优先级
+ */
+function normalizePriority(project) {
+    if (!project || project.priority === undefined || project.priority === null) {
+        return 0;
+    }
+
+    const parsed = Number(project.priority);
+    if (!Number.isFinite(parsed)) {
+        return 0;
+    }
+
+    return Math.trunc(parsed);
 }
 
 /**

@@ -65,6 +65,26 @@ def filter_err_dict_by_tags(err_dict, project_tags):
     return filtered
 
 
+def normalize_priority(project):
+    """将 priority 统一转换为数字，非法值按 0 处理"""
+    raw_priority = project.get('priority')
+    if raw_priority is None:
+        return 0
+    try:
+        return int(raw_priority)
+    except (TypeError, ValueError):
+        return 0
+
+
+def get_visible_projects(projects):
+    """項目列表與統計可見的專案：priority 為 -1 的專案隱藏。"""
+    return {
+        project_id: project
+        for project_id, project in projects.items()
+        if normalize_priority(project) != -1
+    }
+
+
 def load_project_dicts(project_id):
     """
     加载项目词典
@@ -114,7 +134,7 @@ def client_config():
 @app.route('/api/projects', methods=['GET'])
 def get_projects():
     """获取项目列表（用于调试）"""
-    return jsonify({'projects': PROJECTS})
+    return jsonify({'projects': get_visible_projects(PROJECTS)})
 
 
 @app.route('/api/project/<project_id>', methods=['GET'])
@@ -152,12 +172,15 @@ def reload_config():
         
         config.reload_deploy_env()
         
-        app.logger.info(f"reload {len(PROJECTS)} configs")
+        visible_projects = get_visible_projects(PROJECTS)
+        app.logger.info(
+            f"reload {len(PROJECTS)} configs ({len(visible_projects)} visible)"
+        )
         
         return jsonify({
             'success': True,
             'message': '配置文件重新加载成功',
-            'projects_count': len(PROJECTS),
+            'projects_count': len(visible_projects),
             'timestamp': datetime.now().isoformat()
         })
     except Exception as e:
