@@ -1,4 +1,7 @@
 __pycache__/
+# 含真实 IP/路径的本地部署配置，从 template 复制维护
+deploy.env
+nginx.conf
 venv/
 /frontend/ReadMeTmp.mht
 /backend.pid

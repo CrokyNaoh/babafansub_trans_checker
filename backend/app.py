@@ -101,6 +101,16 @@ def health_check():
     })
 
 
+@app.route('/api/client-config', methods=['GET'])
+def client_config():
+    """前端读取公开部署信息（不含密钥）。项目列表「打开项目」链接依赖 publicAppBaseUrl。"""
+    base = config.get_public_app_base_url()
+    return jsonify({
+        'publicAppBaseUrl': base or None,
+        'publicOrigin': config.PUBLIC_ORIGIN or None,
+    })
+
+
 @app.route('/api/projects', methods=['GET'])
 def get_projects():
     """获取项目列表（用于调试）"""
@@ -139,6 +149,8 @@ def reload_config():
         global ERR_DICT_FULL
         with open(err_dict_path, 'r', encoding='utf-8') as f:
             ERR_DICT_FULL = json.load(f)
+        
+        config.reload_deploy_env()
         
         app.logger.info(f"reload {len(PROJECTS)} configs")
         

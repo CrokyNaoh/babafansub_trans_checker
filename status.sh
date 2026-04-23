@@ -3,6 +3,12 @@
 # 翻译检查工具 - 状态检查脚本
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/deploy.env" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$SCRIPT_DIR/deploy.env"
+  set +a
+fi
 PID_FILE="$SCRIPT_DIR/backend.pid"
 
 # 颜色输出
@@ -58,9 +64,16 @@ echo ""
 
 # 4. 访问地址
 echo "【访问地址】"
-echo "http://139.224.225.128/transtool-py/index.html?project=game1"
-echo "http://139.224.225.128/transtool-py/index.html?project=game2"
-echo "http://139.224.225.128/transtool-py/index.html?project=novel"
+if [ -n "${PUBLIC_ORIGIN:-}" ]; then
+  for p in game1 game2 novel; do
+    echo "${PUBLIC_ORIGIN}/transtool-py/index.html?project=$p"
+  done
+else
+  echo "（在 deploy.env 中设置 PUBLIC_ORIGIN 以显示对外访问地址；以下为相对路径示例）"
+  for p in game1 game2 novel; do
+    echo "/transtool-py/index.html?project=$p"
+  done
+fi
 echo ""
 
 # 5. 日志文件

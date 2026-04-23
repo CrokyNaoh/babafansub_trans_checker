@@ -28,16 +28,18 @@ Nginx (端口 8080)
 
 #### 1. 用户输入 URL
 ```
-http://139.224.225.128:8080/transtool-py/index.html?project=game1
-                      ↑          ↑                      ↑
-                    端口    Nginx 路径               项目参数
+http://<服务器或域名>:<端口>/transtool-py/index.html?project=game1
+        ↑                 ↑                ↑
+     公网/内网        如 80/8080        项目参数
 ```
+
+（对外访问时 `PUBLIC_ORIGIN` 写在本地 `deploy.env` 中，不进入版本库。）
 
 #### 2. Nginx 处理请求
 ```nginx
-# nginx.conf
+# 由 nginx.conf.template + deploy.env 生成本地 nginx.conf
 location /transtool-py/ {
-    alias /home/croky/c_svr/transTool/web_py/frontend/;
+    alias <FRONTEND_ROOT>/;
     # 返回 index.html
 }
 ```
@@ -188,7 +190,7 @@ const response = await fetch('/transtool-py/api/check', {
 
 #### 11. Nginx 代理到后端
 ```nginx
-# nginx.conf
+# 本地生成的 nginx.conf（自 template）
 location ^~ /transtool-py/api/ {
     proxy_pass http://127.0.0.1:5000/api/;
     client_max_body_size 100M;  # 允许大文件

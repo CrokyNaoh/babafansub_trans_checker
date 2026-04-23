@@ -3,6 +3,12 @@
 # 翻译检查工具 - 启动脚本（后端版本）
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/deploy.env" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$SCRIPT_DIR/deploy.env"
+  set +a
+fi
 BACKEND_DIR="$SCRIPT_DIR/backend"
 PID_FILE="$SCRIPT_DIR/backend.pid"
 LOG_DIR="$SCRIPT_DIR/logs"
@@ -115,7 +121,8 @@ fi
 
 # 7. Nginx 配置提示
 echo -e "${YELLOW}=== 下一步: 配置 Nginx ===${NC}\n"
-echo "1. 将以下配置添加到 Nginx:"
+echo "1. 生成本地 nginx.conf 并加入 Nginx:"
+echo -e "   ${GREEN}$SCRIPT_DIR/render_nginx.sh${NC}"
 echo -e "   ${GREEN}sudo cp $SCRIPT_DIR/nginx.conf /etc/nginx/sites-available/transtool-py${NC}"
 echo -e "   ${GREEN}sudo ln -sf /etc/nginx/sites-available/transtool-py /etc/nginx/sites-enabled/${NC}"
 echo ""
@@ -123,8 +130,13 @@ echo "2. 测试并重载 Nginx:"
 echo -e "   ${GREEN}sudo nginx -t${NC}"
 echo -e "   ${GREEN}sudo systemctl reload nginx${NC}"
 echo ""
-echo "3. 访问地址:"
-echo -e "   ${GREEN}http://139.224.225.128/transtool-py/index.html?project=game1${NC}"
+echo "3. 访问地址（PUBLIC_ORIGIN 在 deploy.env 中配置，未设置时见下方本机地址）:"
+if [ -n "${PUBLIC_ORIGIN:-}" ]; then
+  echo -e "   对外: ${GREEN}${PUBLIC_ORIGIN}/transtool-py/index.html?project=game1${NC}"
+else
+  echo "   提示: 复制 deploy.env.template 为 deploy.env 并设置 PUBLIC_ORIGIN 以显示公网/对外地址"
+fi
+echo -e "   本机: ${GREEN}http://127.0.0.1/transtool-py/index.html?project=game1${NC}"
 echo ""
 echo "后端日志: $LOG_DIR/backend.log"
 echo -e "停止服务: ${GREEN}./stop.sh${NC}\n"

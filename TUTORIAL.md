@@ -69,7 +69,9 @@ web_py/
 │   ├── termDict_game2.json
 │   └── termDict_novel.json
 ├── logs/                  # 日志目录
-├── nginx.conf            # Nginx 配置
+├── deploy.env.template   # 部署地址等（复制为 deploy.env，勿提交真实值）
+├── nginx.conf.template   # Nginx 模板
+├── render_nginx.sh      # 由 template + deploy.env 生成本地 nginx.conf
 ├── start.sh              # 启动脚本
 ├── stop.sh               # 停止脚本
 ├── restart.sh            # 重启脚本
@@ -81,10 +83,28 @@ web_py/
 
 ## 🚀 快速开始
 
+### 0. 部署配置（首次 / 新机器）
+
+仓库内**不**包含真实公网地址。请从模板生成本地 `deploy.env`（已加入 `.gitignore`）：
+
+```bash
+cd <项目根目录>
+cp deploy.env.template deploy.env
+# 编辑 deploy.env：至少设置 PUBLIC_ORIGIN、NGINX_SERVER_NAME、FRONTEND_ROOT
+chmod +x render_nginx.sh
+./render_nginx.sh
+```
+
+- `PUBLIC_ORIGIN`：对外访问根地址（无尾斜杠），如 `http://你的服务器` 或 `https://子域名.域名`，供项目列表「打开项目」与脚本提示使用。
+- `FRONTEND_ROOT`：本机 `frontend` 目录的**绝对路径**。
+- 生成本地 `nginx.conf` 后，再按下面「配置 Nginx」复制到 `sites-available`。
+
+若暂不配置 `deploy.env`，后端仍可启动；项目列表会退化为使用**当前页所在 origin** 拼链接。
+
 ### 1. 安装依赖
 
 ```bash
-cd /home/croky/c_svr/transTool/web_py
+cd <项目根目录>
 
 # 安装 Python 依赖
 pip3 install -r backend/requirements.txt
@@ -108,6 +128,8 @@ pip3 install -r backend/requirements.txt
 
 ### 3. 配置 Nginx
 
+先完成上一节中的 `./render_nginx.sh`，生成本地 `nginx.conf`（该文件不提交到 Git）。
+
 ```bash
 # 复制配置文件
 sudo cp nginx.conf /etc/nginx/sites-available/transtool-py
@@ -122,10 +144,18 @@ sudo systemctl reload nginx
 
 ### 4. 访问应用
 
+将 `<PUBLIC_ORIGIN>` 换为 `deploy.env` 中的 `PUBLIC_ORIGIN`（无尾斜杠），例如 `http://你的服务器`：
+
 ```
-http://139.224.225.128/transtool-py/index.html?project=game1
-http://139.224.225.128/transtool-py/index.html?project=game2
-http://139.224.225.128/transtool-py/index.html?project=novel
+<PUBLIC_ORIGIN>/transtool-py/index.html?project=game1
+<PUBLIC_ORIGIN>/transtool-py/index.html?project=game2
+<PUBLIC_ORIGIN>/transtool-py/index.html?project=novel
+```
+
+本机调试可访问（若 Nginx 监听本机 80 端口）：
+
+```
+http://127.0.0.1/transtool-py/index.html?project=game1
 ```
 
 ---
@@ -380,23 +410,22 @@ tail -f /var/log/nginx/transtool_py_error.log
 如需调整文件大小限制，需要同步修改以下文件：
 
 1. **config.py** （主配置文件）
-   - 路径：`/home/croky/c_svr/transTool/web_py/config.py`
+   - 路径：`<项目根目录>/config.py`
    - 修改：`MAX_FILE_SIZE_MB = 100`
 
 2. **frontend/js/main.js** （前端验证）
-   - 路径：`/home/croky/c_svr/transTool/web_py/frontend/js/main.js`
+   - 路径：`<项目根目录>/frontend/js/main.js`
    - 第 90 行：`const maxSize = 10 * 1024 * 1024; // 10MB`
    - 第 92 行：错误提示文本
 
-3. **nginx.conf** （Nginx 上传限制）
-   - 路径：`/home/croky/c_svr/transTool/web_py/nginx.conf`
-   - 第 22 行：`client_max_body_size 10M;`
-   - 修改后需重载 Nginx：`sudo systemctl reload nginx`
+3. **由 nginx.conf.template 生成的 nginx.conf** （Nginx 上传限制）
+   - 修改模板或生成后的 `nginx.conf` 中：`client_max_body_size 10M;`
+   - 修改后需执行 `./render_nginx.sh`（若改动了依赖 deploy.env 的项），再重载 Nginx：`sudo systemctl reload nginx`
 
 **注意：** 三处配置必须保持一致，否则会导致上传失败。当前配置为：
 - 后端支持：100MB（config.py）
 - 前端限制：10MB（main.js）
-- Nginx 限制：10M（nginx.conf）
+- Nginx 限制：10M（本地生成的 nginx.conf）
 - **实际生效：10MB**（取最小值）
 
 ### 并发能力
@@ -525,8 +554,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=croky
-WorkingDirectory=/home/croky/c_svr/transTool/web_py/backend
+User=<你的 Linux 用户>
+WorkingDirectory=<项目根目录>/backend
 ExecStart=/usr/bin/python3 app.py
 Restart=on-failure
 
@@ -545,7 +574,7 @@ sudo systemctl start transtool-py
 创建 `/etc/logrotate.d/transtool-py`：
 
 ```
-/home/croky/c_svr/transTool/web_py/logs/*.log {
+<项目根目录>/logs/*.log {
     daily
     rotate 7
     compress

@@ -5,7 +5,8 @@
 
 // API 基礎 URL
 const API_BASE_URL = '/transtool-py/api';
-const PROJECT_BASE_URL = 'http://139.224.225.128/transtool-py/index.html';
+/** 由 /api/client-config 或當前頁 origin 解析，見 initProjectBaseUrl */
+let PROJECT_BASE_URL = '';
 
 // DOM 元素
 let projectsContainer;
@@ -15,8 +16,30 @@ let errorMessage;
 let statsContainer;
 let statsText;
 
+function resolveProjectBaseUrl(data) {
+    if (data && data.publicAppBaseUrl) {
+        return data.publicAppBaseUrl;
+    }
+    return `${window.location.origin}/transtool-py/index.html`;
+}
+
+async function initProjectBaseUrl() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/client-config`);
+        if (response.ok) {
+            const data = await response.json();
+            PROJECT_BASE_URL = resolveProjectBaseUrl(data);
+        } else {
+            PROJECT_BASE_URL = resolveProjectBaseUrl(null);
+        }
+    } catch (e) {
+        console.warn('client-config 失敗，使用本頁 origin:', e);
+        PROJECT_BASE_URL = resolveProjectBaseUrl(null);
+    }
+}
+
 // 初始化
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // 獲取 DOM 元素
     projectsContainer = document.getElementById('projectsContainer');
     loadingContainer = document.getElementById('loadingContainer');
@@ -25,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
     statsContainer = document.getElementById('statsContainer');
     statsText = document.getElementById('statsText');
 
+    await initProjectBaseUrl();
     // 載入項目列表
     loadProjects();
 });
