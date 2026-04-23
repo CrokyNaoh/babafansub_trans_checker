@@ -5,7 +5,8 @@
       "description": "描述",
       "tags": ["tag1"],
       "termDict": "termDict_template.json",
-      "priority": 0
+      "priority": 0,
+      "bgImage": ""
     }
   }
 }

@@ -7,94 +7,114 @@
     <link rel="stylesheet" href="/transtool-py/css/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1 id="projectName">霸霸組繁中工具</h1>
-            <p class="project-description" id="projectDescription"></p>
-            <p class="subtitle" id="projectInfo">載入中...</p>
-        </header>
+    <!-- 全屏背景图层 -->
+    <div class="bg-layer" id="bgLayer"></div>
 
-        <div class="notice">
-            <p>⚠️ 請關閉表格中所有篩選</p>
-            <p>⚠️ 檢查會默認跳過首行</p>
+    <!-- 置顶 banner -->
+    <nav class="top-banner" id="topBanner">
+        <span class="banner-title">霸霸組繁中工具</span>
+        <div class="banner-project-info" id="bannerProjectInfo">
+            <span class="banner-name" id="bannerProjectName"></span>
+            <span class="banner-desc" id="bannerProjectDesc"></span>
         </div>
+    </nav>
 
-        <div class="control-panel">
-            <!-- 功能选择 -->
-            <div class="form-group">
-                <label for="checkMode">選擇功能：</label>
-                <select id="checkMode" class="form-control">
-                    <option value="common">檢查易錯字詞</option>
-                    <option value="spec">標註統一詞</option>
-                </select>
+    <!-- 主内容区：左右结构 -->
+    <main class="main-content" id="pageWrapper">
+        <!-- 左侧：项目信息，错落布局 -->
+        <section class="project-info-area" id="projectInfoArea">
+            <h1 class="info-name" id="projectName">載入中...</h1>
+            <p class="info-desc" id="projectDescription"></p>
+        </section>
+
+        <!-- 右侧：操作面板 -->
+        <aside class="op-panel" id="opPanel">
+            <div class="info-version" id="projectInfo"></div>
+            <div class="notice">
+                <p>⚠️ 請關閉表格中所有篩選</p>
+                <p>⚠️ 檢查會默認跳過首行</p>
             </div>
 
-            <!-- 文件选择 -->
-            <div class="form-group">
-                <label for="fileInput">選擇 Excel 文件：</label>
-                <input type="file" id="fileInput" class="form-control" accept=".xlsx">
-                <span class="file-name" id="fileName">未選擇文件</span>
-            </div>
+            <div class="control-panel">
+                <!-- 功能选择 -->
+                <div class="form-group">
+                    <label for="checkMode">選擇功能：</label>
+                    <select id="checkMode" class="form-control">
+                        <option value="common">檢查易錯字詞</option>
+                        <option value="spec">標註統一詞</option>
+                    </select>
+                </div>
 
-            <!-- 输入列 -->
-            <div class="form-group">
-                <label for="inputCol" id="inputColLabel">待檢查翻譯列號 (A~Z)：</label>
-                <input type="text" id="inputCol" class="form-control col-input" placeholder="C" maxlength="1">
-            </div>
+                <!-- 文件选择 -->
+                <div class="form-group">
+                    <label>選擇 Excel 文件：</label>
+                    <div class="file-input-wrapper">
+                        <label class="file-input-btn" for="fileInput">選擇文件</label>
+                        <span class="file-name" id="fileName">未選擇文件</span>
+                    </div>
+                    <input type="file" id="fileInput" class="file-input-hidden" accept=".xlsx">
+                </div>
 
-            <!-- 输出列1 -->
-            <div class="form-group">
-                <label for="outputCol1" id="outputCol1Label">提示使用列 (A~Z)：</label>
-                <input type="text" id="outputCol1" class="form-control col-input" placeholder="E" maxlength="1">
-            </div>
+                <!-- 输入列 -->
+                <div class="form-group">
+                    <label for="inputCol" id="inputColLabel">待檢查翻譯列號 (A~Z)：</label>
+                    <input type="text" id="inputCol" class="form-control col-input" placeholder="C" maxlength="1">
+                </div>
 
-            <!-- 输出列2 (仅 common 模式) -->
-            <div class="form-group" id="outputCol2Group">
-                <label for="outputCol2">提示使用列其二 (A~Z)：</label>
-                <input type="text" id="outputCol2" class="form-control col-input" placeholder="F" maxlength="1">
-            </div>
+                <!-- 输出列1 -->
+                <div class="form-group">
+                    <label for="outputCol1" id="outputCol1Label">提示使用列 (A~Z)：</label>
+                    <input type="text" id="outputCol1" class="form-control col-input" placeholder="E" maxlength="1">
+                </div>
 
-            <!-- 工作表范围 -->
-            <div class="form-group">
-                <label>工作表範圍：</label>
-                <div class="radio-group">
-                    <label class="radio-label">
-                        <input type="radio" name="sheetType" value="0" checked>
-                        僅檢查第一個工作表
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="sheetType" value="1">
-                        檢查所有工作表
+                <!-- 输出列2 (仅 common 模式) -->
+                <div class="form-group" id="outputCol2Group">
+                    <label for="outputCol2">提示使用列其二 (A~Z)：</label>
+                    <input type="text" id="outputCol2" class="form-control col-input" placeholder="F" maxlength="1">
+                </div>
+
+                <!-- 工作表范围 -->
+                <div class="form-group">
+                    <label>工作表範圍：</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="sheetType" value="0" checked>
+                            僅檢查第一個工作表
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="sheetType" value="1">
+                            檢查所有工作表
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 易塞翻词 (仅 spec 模式) -->
+                <div class="form-group" id="extraHintGroup" style="display: none;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="extraHint">
+                        提示易塞翻詞
                     </label>
                 </div>
+
+                <!-- 开始检查按钮 -->
+                <button id="checkBtn" class="btn-primary">開始檢查</button>
+
+                <!-- 进度条 -->
+                <div class="progress-bar" id="progressBar" style="display: none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-text" id="progressText">處理中...</div>
+                </div>
+
+                <!-- 消息提示 -->
+                <div class="message" id="message"></div>
             </div>
-
-            <!-- 易塞翻词 (仅 spec 模式) -->
-            <div class="form-group" id="extraHintGroup" style="display: none;">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="extraHint">
-                    提示易塞翻詞
-                </label>
-            </div>
-
-            <!-- 开始检查按钮 -->
-            <button id="checkBtn" class="btn-primary">開始檢查</button>
-
-            <!-- 进度条 -->
-            <div class="progress-bar" id="progressBar" style="display: none;">
-                <div class="progress-fill" id="progressFill"></div>
-                <div class="progress-text" id="progressText">處理中...</div>
-            </div>
-
-            <!-- 消息提示 -->
-            <div class="message" id="message"></div>
-        </div>
-    </div>
+        </aside>
+    </main>
 
     <!-- 错误页面（无效项目） -->
     <div class="error-container" id="errorContainer" style="display: none;">
         <div class="error-content">
-            <h1>❌ 無效的訪問鏈接</h1>
+            <h1>&#x274C; 無效的訪問鏈接</h1>
             <p>請使用正確的鏈接訪問本工具</p>
         </div>
     </div>
@@ -103,5 +123,3 @@
     <script src="/transtool-py/js/main.js"></script>
 </body>
 </html>
-
-

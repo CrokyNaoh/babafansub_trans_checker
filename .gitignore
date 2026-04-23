@@ -8,3 +8,4 @@ venv/
 /upload
 /logs/*
 /data/*.json
+/frontend/img/*

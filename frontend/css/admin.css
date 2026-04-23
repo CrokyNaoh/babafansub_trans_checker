@@ -1,5 +1,9 @@
 /* 管理员界面样式 - 项目管理系统 */
 
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
 .admin-container {
     max-width: 1200px;
     margin: 0 auto;
