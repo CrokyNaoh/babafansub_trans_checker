@@ -141,7 +141,7 @@ function createProjectCard(projectId, project) {
             <div class="project-info">
                 <p><strong>描述：</strong>${escapeHtml(description)}</p>
                 <p><strong>術語詞典：</strong>${escapeHtml(termDict)}</p>
-                <p><strong>項目 ID：</strong><code>${escapeHtml(projectId)}</code></p>
+                <p><strong>項目 ID：</strong>${escapeHtml(projectId)}</p>
             </div>
             ${tagsHtml}
             <a href="${projectUrl}" class="project-link" target="_blank" onclick="event.stopPropagation()">
@@ -284,7 +284,7 @@ function showSuccess(message) {
     if (!successContainer) {
         successContainer = document.createElement('div');
         successContainer.id = 'successContainer';
-        successContainer.className = 'success';
+        successContainer.className = 'admin-message success';
         successContainer.style.display = 'none';
         
         // 插入到错误容器之前

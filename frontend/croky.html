@@ -8,36 +8,39 @@
     <link rel="stylesheet" href="/transtool-py/css/admin.css">
 </head>
 <body>
-    <div class="admin-container">
-        <header class="admin-header">
-            <h1>🔧 項目管理界面</h1>
-            <p>霸霸組繁中工具 - 管理員控制台</p>
-        </header>
+    <!-- 置顶 banner -->
+    <nav class="top-banner" id="topBanner">
+        <span class="banner-title">霸霸組繁中工具</span>
+        <span class="banner-desc">管理員控制台</span>
+    </nav>
 
-        <div class="projects-section">
+    <!-- 主内容区 -->
+    <div class="admin-body">
+        <div class="admin-container">
+            <!-- 统计 -->
             <div class="stats" id="statsContainer">
-                <h3>📊 項目統計</h3>
-                <p id="statsText">載入中...</p>
+                <span class="stats-label">項目統計</span>
+                <span class="stats-text" id="statsText">載入中...</span>
             </div>
 
+            <!-- 控制按钮 -->
             <div class="admin-controls">
-                <button class="refresh-btn" onclick="loadProjects()">🔄 刷新項目列表</button>
-                <button class="reload-config-btn" onclick="reloadConfig()">⚙️ 重新加載配置</button>
+                <button class="admin-btn refresh-btn" onclick="loadProjects()">刷新項目列表</button>
+                <button class="admin-btn reload-config-btn" onclick="reloadConfig()">重新加載配置</button>
             </div>
 
-            <div id="errorContainer" class="error" style="display: none;">
-                <strong>❌ 載入失敗：</strong>
+            <!-- 错误/成功提示 -->
+            <div id="errorContainer" class="admin-message error" style="display: none;">
                 <span id="errorMessage"></span>
             </div>
 
-            <div id="loadingContainer" class="loading">
-                <h3>⏳ 正在載入項目列表...</h3>
-                <p>請稍候</p>
+            <!-- 加载中 -->
+            <div id="loadingContainer" class="loading" style="display: none;">
+                <p>正在載入項目列表...</p>
             </div>
 
-            <div id="projectsContainer" class="projects-grid" style="display: none;">
-                <!-- 項目卡片將在這裡動態生成 -->
-            </div>
+            <!-- 项目卡片网格 -->
+            <div id="projectsContainer" class="projects-grid" style="display: none;"></div>
         </div>
     </div>
 
