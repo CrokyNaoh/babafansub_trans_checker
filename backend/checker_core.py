@@ -4,12 +4,41 @@
 """
 
 from openpyxl import load_workbook
-from openpyxl.styles import Alignment, Font
+from openpyxl.styles import Alignment
 from openpyxl.cell.text import InlineFont
 from openpyxl.cell.rich_text import TextBlock, CellRichText
-import os
 
-os.environ["OPENPYXL_LXML"] = "False"
+
+# 提示列统一使用的自动换行样式（共用一个实例，避免每格重复创建）
+WRAP_ALIGNMENT = Alignment(wrapText=True)
+
+
+class RowLimitError(ValueError):
+    """工作表行数超过上限"""
+
+
+class WordIndex:
+    """
+    按首字索引的词表：只对正文中出现过首字的词做子串判断，避免每行遍历整本词典。
+    find() 返回命中词在原词表中的下标，顺序与原词表一致，结果与逐个 `word in text` 完全相同。
+    """
+
+    def __init__(self, words):
+        self._words = list(words)
+        self._always = []      # 空词：`'' in text` 恒为真，与原逻辑保持一致
+        self._by_first = {}
+        for idx, word in enumerate(self._words):
+            if word:
+                self._by_first.setdefault(word[0], []).append(idx)
+            else:
+                self._always.append(idx)
+
+    def find(self, text):
+        candidates = list(self._always)
+        for ch in set(text):
+            candidates.extend(self._by_first.get(ch, ()))
+        candidates.sort()
+        return [idx for idx in candidates if self._words[idx] in text]
 
 
 class ExcelChecker:
@@ -40,6 +69,40 @@ class ExcelChecker:
         """估算行高"""
         return 20 * len(hints)
     
+    def _common_row_hints(self, content, err_items, err_index, warn_items, repeat_chars):
+        """
+        计算一行的易错字词提示
+
+        Returns:
+            (hint_err, hint_warn, mark_chars)：错误提示、警告提示、需要标红的字符集合
+        """
+        # 1. 检查错误词
+        hint_err = [f"{err_items[i][0]}→{err_items[i][1]}" for i in err_index.find(content)]
+
+        # 2. 检查易混淆字：组内出现在本行的字全部标红，提示每组只出一条
+        hint_warn = []
+        mark_chars = set()
+        content_chars = set(content)
+        for warn_word, desc in warn_items:
+            hit = [ch for ch in warn_word if ch in content_chars]
+            if hit:
+                mark_chars.update(hit)
+                hint_warn.append(f"{warn_word}：{desc}")
+
+        # 3. 检查叠字
+        hint_repeat = []
+        for i in range(1, len(content)):
+            ch = content[i]
+            if ch in repeat_chars or ch in hint_repeat:
+                continue
+            if content[i - 1] == ch:
+                hint_repeat.append(ch)
+
+        if hint_repeat:
+            hint_warn.append(" ".join(["出現疊字"] + hint_repeat))
+
+        return hint_err, hint_warn, mark_chars
+
     def do_common_check(self, wb, sheetnames, input_col, err_col, warn_col):
         """
         检查易错字词模式
@@ -55,9 +118,11 @@ class ExcelChecker:
         err_pos = ord(err_col) - ord('A')
         warn_pos = ord(warn_col) - ord('A')
         
-        err_words = self.err_dict.get('err', {})
-        warn_words = self.err_dict.get('warn', {})
-        repeat_chars = self.err_dict.get('repeat', [])
+        # 词典在循环外预处理一次
+        err_items = list(self.err_dict.get('err', {}).items())
+        err_index = WordIndex(word for word, _ in err_items)
+        warn_items = list(self.err_dict.get('warn', {}).items())
+        repeat_chars = set(self.err_dict.get('repeat', []))
         
         for sheetname in sheetnames:
             sheet = wb[sheetname]
@@ -72,44 +137,18 @@ class ExcelChecker:
                     continue
                 
                 content = str(row[pos].value)
-                hint_err = []
-                hint_warn = []
-                hint_repeat = []
-                mark_chars = []  # 需要标红的字符
-                
-                # 1. 检查错误词
-                for err_word, correct_word in err_words.items():
-                    if err_word in content:
-                        hint_err.append(f"{err_word}→{correct_word}")
-                
-                # 2. 检查易混淆字（需要标红）
-                for warn_word, desc in warn_words.items():
-                    for ch in warn_word:
-                        if ch in content:
-                            mark_chars.append(ch)
-                            hint_warn.append(f"{warn_word}：{desc}")
-                            break
-                
-                # 3. 检查叠字
-                for i in range(1, len(content)):
-                    if content[i] in repeat_chars:
-                        continue
-                    if content[i] in hint_repeat:
-                        continue
-                    if content[i-1] == content[i]:
-                        hint_repeat.append(content[i])
-                
-                if hint_repeat:
-                    hint_warn.append(" ".join(["出現疊字"] + hint_repeat))
+                hint_err, hint_warn, mark_chars = self._common_row_hints(
+                    content, err_items, err_index, warn_items, repeat_chars
+                )
                 
                 # 设置错误和警告提示
                 err_hint_text = "\r\n".join(hint_err)
                 warn_hint_text = "\r\n".join(hint_warn)
                 
                 sheet.cell(row[0].row, err_pos + 1).value = err_hint_text
-                sheet.cell(row[0].row, err_pos + 1).alignment = Alignment(wrapText=True)
+                sheet.cell(row[0].row, err_pos + 1).alignment = WRAP_ALIGNMENT
                 sheet.cell(row[0].row, warn_pos + 1).value = warn_hint_text
-                sheet.cell(row[0].row, warn_pos + 1).alignment = Alignment(wrapText=True)
+                sheet.cell(row[0].row, warn_pos + 1).alignment = WRAP_ALIGNMENT
                 
                 # 调整列宽
                 cd_err = sheet.column_dimensions[err_col]
@@ -151,8 +190,16 @@ class ExcelChecker:
         pos = ord(input_col) - ord('A')
         warn_pos = ord(warn_col) - ord('A')
         
+        # 词典在循环外预处理一次
         term_words = self.term_dict.get('word', [])
-        transhint_words = self.err_dict.get('transhint', {})
+        term_index = WordIndex(self.fix_content(term['ja']) for term in term_words)
+        term_set = set(term['ja'] for term in term_words)
+        trans_items = [
+            (word, desc)
+            for word, desc in self.err_dict.get('transhint', {}).items()
+            if word not in term_set
+        ]
+        trans_index = WordIndex(word for word, _ in trans_items)
         
         for sheetname in sheetnames:
             sheet = wb[sheetname]
@@ -169,25 +216,19 @@ class ExcelChecker:
                 content = str(row[pos].value)
                 content_clean = self.fix_content(content)
                 
-                hint = []
-                extra_hint = []
-                
                 # 1. 检查统一词
-                for term in term_words:
-                    term_text = term['ja']
-                    term_text_clean = self.fix_content(term_text)
-                    
-                    if term_text_clean in content_clean:
-                        comment = f"({term['note']})" if term.get('note') else ''
-                        hint.append(f"{term_text}{comment}：{term['zh']}")
+                hint = []
+                for i in term_index.find(content_clean):
+                    term = term_words[i]
+                    comment = f"({term['note']})" if term.get('note') else ''
+                    hint.append(f"{term['ja']}{comment}：{term['zh']}")
                 
                 # 2. 检查易塞翻词（可选）
                 if include_transhint:
-                    term_set = set(term['ja'] for term in term_words)
-                    for trans_word, trans_desc in transhint_words.items():
-                        if trans_word not in term_set and trans_word in content_clean:
-                            extra_hint.append(f"{trans_word}：{trans_desc}")
-                    
+                    extra_hint = [
+                        f"{trans_items[i][0]}：{trans_items[i][1]}"
+                        for i in trans_index.find(content_clean)
+                    ]
                     if extra_hint:
                         hint.append("【易塞翻詞，提供參考釋義】")
                         hint.extend(extra_hint)
@@ -195,7 +236,7 @@ class ExcelChecker:
                 # 设置警告提示
                 warn_hint_text = "\r\n".join(hint)
                 sheet.cell(row[0].row, warn_pos + 1).value = warn_hint_text
-                sheet.cell(row[0].row, warn_pos + 1).alignment = Alignment(wrapText=True)
+                sheet.cell(row[0].row, warn_pos + 1).alignment = WRAP_ALIGNMENT
                 
                 # 调整列宽和行高
                 cd_warn = sheet.column_dimensions[warn_col]
@@ -206,7 +247,7 @@ class ExcelChecker:
                     rd.height = 20
                 rd.height = max(rd.height, self.estimate_height(hint))
     
-    def process_file(self, input_path, output_path, config):
+    def process_file(self, input_path, output_path, config, max_rows=None):
         """
         处理文件主入口
         
@@ -220,7 +261,8 @@ class ExcelChecker:
                 - outputCol2: 输出列2（仅 common 模式）
                 - checkAllSheets: 是否检查所有工作表
                 - includeTransHint: 是否包含易塞翻词（仅 spec 模式）
-        
+            max_rows: 每个工作表允许的最大行数，超过时抛出 RowLimitError
+
         Returns:
             输出文件路径
         """
@@ -232,7 +274,13 @@ class ExcelChecker:
             sheetnames = wb.sheetnames
         else:
             sheetnames = [wb.sheetnames[0]]
-        
+
+        if max_rows:
+            over = [(name, wb[name].max_row) for name in sheetnames if wb[name].max_row > max_rows]
+            if over:
+                detail = '、'.join(f'「{name}」{rows} 行' for name, rows in over)
+                raise RowLimitError(f'工作表行數超過上限 {max_rows} 行：{detail}')
+
         # 执行检查
         if config['mode'] == 'common':
             self.do_common_check(

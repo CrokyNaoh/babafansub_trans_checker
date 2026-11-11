@@ -72,6 +72,12 @@ MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024
 # 允许的文件扩展名
 ALLOWED_EXTENSIONS = {'xlsx'}
 
+# 每个工作表允许的最大行数（前端选文件时、后端处理时都按此检查）
+MAX_ROWS_PER_SHEET = 70000
+
+# 单次检查子进程的最长运行时间（秒）；加上排队等待（app.py 的 CHECK_QUEUE_WAIT_SEC）需小于 nginx 的 proxy_read_timeout (300)
+CHECK_TIMEOUT_SEC = 240
+
 # ==================== 目录配置 ====================
 
 # 临时文件上传目录

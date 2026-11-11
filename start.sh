@@ -42,7 +42,7 @@ if [ ! -f "$VENV_PYTHON" ]; then
     exit 1
 fi
 
-if ! "$VENV_PYTHON" -c "import flask, openpyxl, flask_cors, lxml" 2>/dev/null; then
+if ! "$VENV_PYTHON" -c "import flask, openpyxl, lxml, gunicorn" 2>/dev/null; then
     echo -e "${YELLOW}正在安装依赖...${NC}"
     "$BACKEND_DIR/venv/bin/pip3" install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
     if [ $? -ne 0 ]; then
@@ -78,44 +78,47 @@ done
 
 echo -e "${GREEN}✓ 词库文件完整${NC}\n"
 
-# 4. 检查是否已在运行
-echo "4. 检查后端状态..."
+# 4. 停掉旧版（nohup 方式）遗留的进程
 if [ -f "$PID_FILE" ]; then
     OLD_PID=$(cat "$PID_FILE")
-    if ps -p "$OLD_PID" > /dev/null 2>&1; then
-        echo -e "${YELLOW}后端已在运行 (PID: $OLD_PID)${NC}"
-        echo -e "如需重启，请先运行: ./stop.sh\n"
-        exit 0
-    else
-        rm "$PID_FILE"
+    # 确认 PID 仍是本工具的进程（避免 PID 被系统回收给其他程序后误杀）
+    if ps -p "$OLD_PID" -o args= 2>/dev/null | grep -q "app.py"; then
+        echo -e "${YELLOW}停止旧版后端进程 (PID: $OLD_PID)${NC}"
+        kill "$OLD_PID"
+        # 等旧进程退出、释放 5000 端口，最多 10 秒
+        for i in $(seq 1 10); do
+            ps -p "$OLD_PID" > /dev/null 2>&1 || break
+            sleep 1
+        done
+        if ps -p "$OLD_PID" > /dev/null 2>&1; then
+            echo -e "${RED}错误: 旧版后端进程未退出，请手动处理 (PID: $OLD_PID)${NC}"
+            exit 1
+        fi
     fi
+    rm -f "$PID_FILE"
 fi
 
-# 5. 启动后端服务
+# 5. 通过 systemd 用户服务启动（挂了自动重启、有内存上限）
 echo "5. 启动后端服务..."
-cd "$BACKEND_DIR"
-
-nohup "$VENV_PYTHON" app.py > "$LOG_DIR/backend.log" 2>&1 &
-BACKEND_PID=$!
-echo $BACKEND_PID > "$PID_FILE"
+# 每次都重新渲染服务文件，模板改动（如内存上限）随代码一起生效
+"$SCRIPT_DIR/deploy/install_service.sh" || exit 1
+# 已在运行时用 restart，确保加载拉取后的新代码
+systemctl --user restart transtool-py.service
 
 # 等待服务启动
-sleep 2
-
-if ps -p "$BACKEND_PID" > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ 后端服务已启动 (PID: $BACKEND_PID)${NC}\n"
-else
-    echo -e "${RED}错误: 后端启动失败，请查看日志: $LOG_DIR/backend.log${NC}"
-    exit 1
-fi
+for i in $(seq 1 10); do
+    sleep 1
+    if curl -s http://localhost:5000/api/health > /dev/null; then
+        break
+    fi
+done
 
 # 6. 测试服务
 echo "6. 测试服务..."
-sleep 1
 if curl -s http://localhost:5000/api/health > /dev/null; then
     echo -e "${GREEN}✓ 服务正常运行${NC}\n"
 else
-    echo -e "${RED}错误: 服务未响应${NC}"
+    echo -e "${RED}错误: 服务未响应，请查看: systemctl --user status transtool-py 或 $LOG_DIR/backend.log${NC}"
     exit 1
 fi
 
@@ -139,7 +142,7 @@ fi
 echo -e "   本机: ${GREEN}http://127.0.0.1/transtool-py/index.html?project=game1${NC}"
 echo ""
 echo "后端日志: $LOG_DIR/backend.log"
-echo -e "停止服务: ${GREEN}./stop.sh${NC}\n"
+echo -e "停止服务: ${GREEN}./stop.sh${NC}   查看状态: ${GREEN}./status.sh${NC}\n"
 
 echo -e "${GREEN}=== 启动完成 ===${NC}"
 

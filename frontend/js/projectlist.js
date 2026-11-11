@@ -126,9 +126,9 @@ function renderProjects(projects) {
 }
 
 /**
- * 规范化 priority 数值
- * @param {Object} project - 项目信息
- * @returns {number} 标准化后的优先级
+ * 規範化 priority 數值
+ * @param {Object} project - 項目信息
+ * @returns {number} 標準化後的優先級
  */
 function normalizePriority(project) {
     if (!project || project.priority === undefined || project.priority === null) {
@@ -151,35 +151,70 @@ function normalizePriority(project) {
  */
 function createProjectCard(projectId, project) {
     const projectUrl = `${PROJECT_BASE_URL}?project=${encodeURIComponent(projectId)}`;
-    
+
     // 處理標籤
     const tags = project.tags || [];
-    const tagsHtml = tags.length > 0 
+    const tagsHtml = tags.length > 0
         ? `<div class="project-tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>`
         : '';
 
-    // 處理描述
     const description = project.description || '暫無描述';
-    
-    // 處理術語詞典文件名
     const termDict = project.termDict || `termDict_${projectId}.json`;
-    // 項目名
     const name = project.name || projectId;
+    const termVersion = project.termDictVersion || '未知';
+
+    // 背景圖縮略圖（沒有背景圖的項目不顯示）與項目主色
+    const accent = /^#[0-9a-fA-F]{6}$/.test(project.accentColor || '') ? `--card-accent: ${project.accentColor};` : '';
+    const thumbHtml = project.bgImage
+        ? `<div class="project-thumb" style="background-image: url('/transtool-py/img/${encodeURIComponent(project.bgImage)}');${accent}"></div>`
+        : (accent ? `<div class="project-accent-bar" style="${accent}"></div>` : '');
 
     return `
         <div class="project-card" onclick="openProject('${escapeHtml(projectId)}')">
-            <h3>${escapeHtml(name)}</h3>
-            <div class="project-info">
-                <p><strong>描述：</strong>${escapeHtml(description)}</p>
-                <p><strong>術語詞典：</strong>${escapeHtml(termDict)}</p>
-                <p><strong>項目 ID：</strong>${escapeHtml(projectId)}</p>
+            ${thumbHtml}
+            <div class="project-body">
+                <h3>${escapeHtml(name)}</h3>
+                <div class="project-info">
+                    <p><strong>描述：</strong>${escapeHtml(description)}</p>
+                    <p><strong>術語詞典：</strong>${escapeHtml(termDict)}</p>
+                    <p><strong>詞庫更新時間：</strong>${escapeHtml(termVersion)}</p>
+                    <p><strong>項目 ID：</strong>${escapeHtml(projectId)}</p>
+                </div>
+                ${tagsHtml}
+                <div class="project-actions">
+                    <a href="${projectUrl}" class="project-link" target="_blank" onclick="event.stopPropagation()">打開項目</a>
+                    <button type="button" class="copy-link-btn" data-url="${escapeHtml(projectUrl)}" onclick="copyProjectLink(event)">複製鏈接</button>
+                </div>
             </div>
-            ${tagsHtml}
-            <a href="${projectUrl}" class="project-link" target="_blank" onclick="event.stopPropagation()">
-                🔗 打開項目
-            </a>
         </div>
     `;
+}
+
+/**
+ * 複製項目鏈接到剪貼簿
+ * @param {MouseEvent} event - 點擊事件
+ */
+async function copyProjectLink(event) {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    const url = btn.dataset.url;
+    try {
+        await navigator.clipboard.writeText(url);
+    } catch (e) {
+        // 非 HTTPS 頁面無法使用 Clipboard API，退回舊方法
+        const input = document.createElement('textarea');
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+    }
+    btn.textContent = '已複製';
+    btn.classList.add('copied');
+    setTimeout(() => {
+        btn.textContent = '複製鏈接';
+        btn.classList.remove('copied');
+    }, 1500);
 }
 
 /**
@@ -264,21 +299,21 @@ function escapeHtml(text) {
 }
 
 /**
- * 重新加载配置文件
+ * 重新載入配置文件
  */
 async function reloadConfig() {
     const reloadBtn = document.querySelector('.reload-config-btn');
     
     try {
-        // 禁用按钮并显示加载状态
+        // 禁用按鈕並顯示載入狀態
         reloadBtn.disabled = true;
-        reloadBtn.textContent = '⏳ 重新加載中...';
+        reloadBtn.textContent = '重新加載中...';
         
         showLoading();
         hideError();
         hideSuccess();
 
-        // 发送重新加载请求
+        // 發送重新載入請求
         const response = await fetch(`${API_BASE_URL}/reload-config`, {
             method: 'POST',
             headers: {
@@ -289,28 +324,28 @@ async function reloadConfig() {
         const data = await response.json();
         
         if (data.success) {
-            // 重新加载成功后刷新项目列表
+            // 重新載入成功後刷新項目列表
             await loadProjects();
-            showSuccess(`✅ 配置重新加载成功！加载了 ${data.projects_count} 个项目`);
+            showSuccess(`配置重新加載成功！共載入 ${data.projects_count} 個項目`);
         } else {
-            showError(`重新加载失败: ${data.error}`);
+            showError(`重新加載失敗：${data.error}`);
         }
     } catch (error) {
-        console.error('重新加载配置失败:', error);
-        showError(`重新加载失败: ${error.message}`);
+        console.error('重新加載配置失敗:', error);
+        showError(`重新加載失敗：${error.message}`);
     } finally {
-        // 恢复按钮状态
+        // 恢復按鈕狀態
         reloadBtn.disabled = false;
-        reloadBtn.textContent = '⚙️ 重新加載配置';
+        reloadBtn.textContent = '重新加載配置';
     }
 }
 
 /**
- * 显示成功消息
+ * 顯示成功消息
  * @param {string} message - 成功信息
  */
 function showSuccess(message) {
-    // 创建或更新成功消息容器
+    // 建立或更新成功消息容器
     let successContainer = document.getElementById('successContainer');
     if (!successContainer) {
         successContainer = document.createElement('div');
@@ -318,22 +353,22 @@ function showSuccess(message) {
         successContainer.className = 'admin-message success';
         successContainer.style.display = 'none';
         
-        // 插入到错误容器之前
+        // 插入到錯誤容器之前
         const errorContainer = document.getElementById('errorContainer');
         errorContainer.parentNode.insertBefore(successContainer, errorContainer);
     }
     
-    successContainer.innerHTML = `<strong>✅ 操作成功：</strong><span>${message}</span>`;
+    successContainer.innerHTML = `<strong>操作成功：</strong><span>${escapeHtml(message)}</span>`;
     successContainer.style.display = 'block';
     
-    // 3秒后自动隐藏
+    // 3 秒後自動隱藏
     setTimeout(() => {
         hideSuccess();
     }, 3000);
 }
 
 /**
- * 隐藏成功消息
+ * 隱藏成功消息
  */
 function hideSuccess() {
     const successContainer = document.getElementById('successContainer');

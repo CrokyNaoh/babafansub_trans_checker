@@ -1,3 +1,13 @@
+/* 主色：默认黑色（与旧版一致）；项目可在 projects.json 用 accentColor 覆盖（见 main.js） */
+:root {
+    --accent: #262626;
+    /* 悬停时略微提亮：黑色和彩色主色都能看出变化 */
+    --accent-hover: color-mix(in srgb, var(--accent) 85%, #fff);
+    --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+    /* 主色的深色调：顶部横幅、项目名衬底用，保证白字清楚、不和背景图抢眼 */
+    --accent-deep: color-mix(in srgb, var(--accent) 60%, #0a0a0a);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -5,7 +15,7 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     min-height: 100vh;
     color: #e0e0e0;
     background: #1a1a1a;
@@ -54,10 +64,10 @@ body {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgba(12, 12, 12, 0.88);
+    background: color-mix(in srgb, var(--accent-deep) 90%, transparent);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, rgba(255, 255, 255, 0.06));
     padding: 14px 28px;
     display: flex;
     align-items: baseline;
@@ -130,7 +140,7 @@ body {
     color: #ffffff;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 2px 12px rgba(0, 0, 0, 0.7);
     padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.25);
+    background: color-mix(in srgb, var(--accent-deep) 45%, transparent);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border-radius: 6px;
@@ -147,7 +157,7 @@ body {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 6px rgba(0, 0, 0, 0.6);
     font-style: italic;
     padding: 8px 14px;
-    background: rgba(0, 0, 0, 0.18);
+    background: color-mix(in srgb, var(--accent-deep) 32%, transparent);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     border-radius: 4px;
@@ -210,7 +220,8 @@ body {
     margin-bottom: 14px;
 }
 
-.form-group label {
+.form-group > label:not(.file-drop),
+.group-label {
     display: block;
     margin-bottom: 5px;
     font-weight: 500;
@@ -230,10 +241,15 @@ body {
     transition: border-color 0.25s, background-color 0.25s;
 }
 
+.form-control:hover {
+    border-color: rgba(0, 0, 0, 0.3);
+}
+
 .form-control:focus {
     outline: none;
-    border-color: rgba(0, 0, 0, 0.25);
-    background: rgba(0, 0, 0, 0.06);
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .form-control option {
@@ -249,29 +265,59 @@ body {
     overflow: hidden;
 }
 
-.file-input-wrapper {
+.file-drop {
     display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.file-input-btn {
-    display: inline-block;
-    padding: 7px 18px;
-    background: rgba(0, 0, 0, 0.14);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 5px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #333;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 12px;
+    border: 1.5px dashed rgba(0, 0, 0, 0.25);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.35);
     cursor: pointer;
-    transition: background-color 0.2s;
-    white-space: nowrap;
-    flex-shrink: 0;
+    text-align: center;
+    transition: border-color 0.2s, background-color 0.2s;
 }
 
-.file-input-btn:hover {
-    background: rgba(0, 0, 0, 0.14);
+.file-drop:hover,
+.file-drop.dragover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.file-drop:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.file-drop.has-file {
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.file-drop.busy {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.file-drop-title {
+    font-size: 13px;
+    color: #555;
+}
+
+.file-drop-link {
+    color: var(--accent);
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+.file-meta {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.file-meta:empty {
+    display: none;
 }
 
 .col-input {
@@ -285,12 +331,62 @@ body {
 
 .file-name {
     font-size: 13px;
-    color: rgba(0, 0, 0, 0.4);
+    color: rgba(0, 0, 0, 0.45);
     font-style: italic;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
+}
+
+.file-drop.has-file .file-name {
+    color: #222;
+    font-style: normal;
+    font-weight: 600;
+}
+
+/* ===== 功能切换（分段按钮） ===== */
+
+.segmented {
+    display: flex;
+    padding: 3px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 7px;
+}
+
+.segmented input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.segmented label {
+    flex: 1;
+    margin: 0;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.segmented label:hover {
+    color: #222;
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.segmented input:checked + label {
+    background: #fff;
+    color: var(--accent);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.segmented input:focus-visible + label {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
 }
 
 /* ===== 单选 & 复选 ===== */
@@ -314,7 +410,7 @@ body {
 
 .radio-label input, .checkbox-label input {
     cursor: pointer;
-    accent-color: #666;
+    accent-color: var(--accent);
 }
 
 /* ===== 按钮 ===== */
@@ -322,23 +418,47 @@ body {
 .btn-primary {
     width: 100%;
     padding: 11px 18px;
-    background: rgba(0, 0, 0, 0.85);
+    background: var(--accent);
     color: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 6px;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.15s;
+    transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
 }
 
-.btn-primary:hover {
-    background: rgba(0, 0, 0, 0.85);
+.btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--accent-soft);
 }
 
-.btn-primary:active {
+.btn-primary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.btn-primary:active:not(:disabled) {
     transform: translateY(0);
+    box-shadow: none;
+}
+
+.shortcut-hint {
+    margin-top: 6px;
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.45);
+    text-align: right;
+}
+
+kbd {
+    padding: 0 4px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-bottom-width: 2px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.6);
+    font-family: inherit;
+    font-size: 10px;
 }
 
 .btn-primary:disabled {
@@ -366,14 +486,25 @@ body {
     left: 0;
     height: 100%;
     width: 0%;
-    background: rgba(0, 0, 0, 0.12);
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
     transition: width 0.3s;
-    animation: pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+/* 处理阶段无法得知真实进度：显示流动条纹 */
+.progress-bar.indeterminate .progress-fill {
+    width: 100% !important;
+    background: repeating-linear-gradient(
+        -45deg,
+        color-mix(in srgb, var(--accent) 22%, transparent) 0 12px,
+        color-mix(in srgb, var(--accent) 34%, transparent) 12px 24px
+    );
+    background-size: 34px 34px;
+    animation: progress-stripes 1s linear infinite;
+}
+
+@keyframes progress-stripes {
+    from { background-position: 0 0; }
+    to { background-position: 34px 0; }
 }
 
 .progress-text {

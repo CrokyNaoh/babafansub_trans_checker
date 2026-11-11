@@ -9,7 +9,6 @@ if [ -f "$SCRIPT_DIR/deploy.env" ]; then
   source "$SCRIPT_DIR/deploy.env"
   set +a
 fi
-PID_FILE="$SCRIPT_DIR/backend.pid"
 
 # 颜色输出
 GREEN='\033[0;32m'
@@ -21,18 +20,16 @@ echo -e "${YELLOW}=== 翻译检查工具 - 服务状态 ===${NC}\n"
 
 # 1. 后端状态
 echo "【后端服务】"
-if [ -f "$PID_FILE" ]; then
-    PID=$(cat "$PID_FILE")
-    if ps -p "$PID" > /dev/null 2>&1; then
-        echo -e "状态: ${GREEN}运行中${NC}"
-        echo "PID: $PID"
-        echo "内存: $(ps -o rss= -p $PID | awk '{print int($1/1024)"MB"}')"
-        echo "运行时间: $(ps -o etime= -p $PID | xargs)"
-    else
-        echo -e "状态: ${RED}已停止${NC} (PID 文件存在但进程不存在)"
-    fi
+if systemctl --user is-active --quiet transtool-py.service; then
+    echo -e "状态: ${GREEN}运行中${NC}"
+    MAIN_PID=$(systemctl --user show -p MainPID --value transtool-py.service)
+    MEM=$(systemctl --user show -p MemoryCurrent --value transtool-py.service)
+    echo "PID: $MAIN_PID"
+    [ -n "$MEM" ] && [ "$MEM" != "[not set]" ] && echo "内存: $((MEM / 1024 / 1024))MB（含检查子进程）"
+    echo "启动时间: $(systemctl --user show -p ActiveEnterTimestamp --value transtool-py.service)"
+    echo "自动重启次数: $(systemctl --user show -p NRestarts --value transtool-py.service)"
 else
-    echo -e "状态: ${YELLOW}未运行${NC}"
+    echo -e "状态: ${RED}未运行${NC}"
 fi
 echo ""
 

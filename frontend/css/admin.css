@@ -139,16 +139,33 @@
     background: rgba(255, 255, 255, 0.75);
     border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 6px;
-    padding: 18px;
+    overflow: hidden;
     transition: all 0.2s ease;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
 }
 
 .project-card:hover {
-    background: rgba(255, 255, 255, 0.5);
-    border-color: rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.12);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.project-thumb {
+    height: 96px;
+    background: #2a2a2a center / cover no-repeat;
+    border-bottom: 3px solid var(--card-accent, transparent);
+}
+
+.project-accent-bar {
+    height: 3px;
+    background: var(--card-accent);
+}
+
+.project-body {
+    padding: 14px 18px 18px;
 }
 
 .project-card h3 {
@@ -200,22 +217,50 @@
     margin: 2px;
 }
 
-.project-link {
+.project-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.project-link,
+.copy-link-btn {
     display: inline-block;
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
-    text-decoration: none;
     padding: 8px 16px;
     border-radius: 5px;
     font-size: 13px;
     font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    cursor: pointer;
     transition: background-color 0.2s, transform 0.15s;
-    margin-top: 6px;
+}
+
+.project-link {
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    border: 1px solid transparent;
 }
 
 .project-link:hover {
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.9);
     transform: translateY(-1px);
+}
+
+.copy-link-btn {
+    background: rgba(255, 255, 255, 0.6);
+    color: #333;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.copy-link-btn:hover {
+    background: #fff;
+    transform: translateY(-1px);
+}
+
+.copy-link-btn.copied {
+    color: #1a7a34;
+    border-color: rgba(40, 167, 69, 0.5);
 }
 
 /* ===== 响应式 ===== */

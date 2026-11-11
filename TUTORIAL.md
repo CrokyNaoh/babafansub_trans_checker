@@ -39,7 +39,7 @@
 - Python 3.x
 - Flask (Web 框架)
 - openpyxl (Excel 处理，保留格式)
-- Flask-CORS (跨域支持)
+- gunicorn（生产环境运行，systemd 用户服务管理）
 
 **前端：**
 - HTML5 + CSS3 + JavaScript
@@ -112,6 +112,23 @@ pip3 install -r backend/requirements.txt
 
 ### 2. 启动后端服务
 
+后端以 systemd **用户服务** `transtool-py` 运行（gunicorn，1 个 worker），挂掉会自动重启，并限制内存上限。
+每次检查在独立子进程中执行、同一时间只处理一个文件，处理完内存全部归还系统。
+
+首次部署需要管理员执行一次（否则退出登录或重启后服务不会自动运行）：
+
+```bash
+sudo loginctl enable-linger <你的 Linux 用户>
+```
+
+`start.sh` 首次运行时会自动调用 `deploy/install_service.sh` 安装服务；
+修改 `deploy/transtool-py.service.template` 或想调整内存上限时，重新执行：
+
+```bash
+MEMORY_HIGH=900M MEMORY_MAX=1100M deploy/install_service.sh
+systemctl --user restart transtool-py
+```
+
 ```bash
 # 启动
 ./start.sh
@@ -141,6 +158,19 @@ sudo nginx -t
 # 重载 Nginx
 sudo systemctl reload nginx
 ```
+
+#### 管理页密码
+
+管理页 `croky.html` 和管理接口（项目列表、重新加载配置）需要账号密码，检查页不需要。账号保存在 `/etc/nginx/transtool-py.htpasswd`（只存密码的 SHA-512 哈希，不存原文；只有 root 能改、nginx 能读），用脚本管理：
+
+```bash
+sudo deploy/admin_password.sh                 # 设置 / 重设 admin 的密码（忘记密码时用这个）
+sudo deploy/admin_password.sh 用户名          # 设置 / 重设指定账号（不存在就新增）
+sudo deploy/admin_password.sh --list          # 列出所有账号
+sudo deploy/admin_password.sh --delete 用户名 # 删除账号
+```
+
+改动立即生效，不用重载 nginx。首次部署时先建好账号，再重载 nginx，否则管理页无法登录。
 
 ### 4. 访问应用
 
@@ -287,8 +317,7 @@ GET /transtool-py/api/health
 ```json
 {
   "status": "ok",
-  "timestamp": "2025-10-01T23:00:00",
-  "projects": ["game1", "game2", "novel"]
+  "timestamp": "2025-10-01T23:00:00"
 }
 ```
 
@@ -480,7 +509,7 @@ cat logs/backend.log
 lsof -i:5000
 
 # 检查 Python 依赖
-pip3 list | grep -E "Flask|openpyxl|flask-cors"
+pip3 list | grep -E "Flask|openpyxl|gunicorn"
 ```
 
 ### 2. Nginx 502 错误
@@ -529,45 +558,10 @@ ls -la data/
 
 ## 📈 优化建议
 
-### 1. 使用 Gunicorn（生产环境）
+### 1. Gunicorn 与 Systemd
 
-修改 `start.sh`，使用 Gunicorn：
-
-```bash
-cd backend
-gunicorn -w 4 \
-  -b 127.0.0.1:5000 \
-  --timeout 300 \
-  --access-logfile ../logs/access.log \
-  --error-logfile ../logs/error.log \
-  app:app
-```
-
-### 2. 配置 Systemd 服务
-
-创建 `/etc/systemd/system/transtool-py.service`：
-
-```ini
-[Unit]
-Description=Translation Tool Backend
-After=network.target
-
-[Service]
-Type=simple
-User=<你的 Linux 用户>
-WorkingDirectory=<项目根目录>/backend
-ExecStart=/usr/bin/python3 app.py
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
-
-启用服务：
-```bash
-sudo systemctl enable transtool-py
-sudo systemctl start transtool-py
-```
+已内置，见上文「启动后端服务」：配置在 `deploy/gunicorn.conf.py` 与 `deploy/transtool-py.service.template`。
+机器内存很小（1.6GB），不要调大 worker 数；检查是串行执行的，加 worker 只会增加内存风险。
 
 ### 3. 日志轮转
 

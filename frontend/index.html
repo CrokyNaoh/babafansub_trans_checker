@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>霸霸組繁中工具</title>
-    <link rel="stylesheet" href="/transtool-py/css/style.css">
+    <link rel="stylesheet" href="/transtool-py/css/style.css?v=20261111">
 </head>
 <body>
     <!-- 全屏背景图层 -->
@@ -38,21 +38,24 @@
             <div class="control-panel">
                 <!-- 功能选择 -->
                 <div class="form-group">
-                    <label for="checkMode">選擇功能：</label>
-                    <select id="checkMode" class="form-control">
-                        <option value="common">檢查易錯字詞</option>
-                        <option value="spec">標註統一詞</option>
-                    </select>
+                    <span class="group-label">選擇功能：</span>
+                    <div class="segmented" role="radiogroup" aria-label="選擇功能">
+                        <input type="radio" name="checkMode" id="modeCommon" value="common" checked>
+                        <label for="modeCommon">檢查易錯字詞</label>
+                        <input type="radio" name="checkMode" id="modeSpec" value="spec">
+                        <label for="modeSpec">標註統一詞</label>
+                    </div>
                 </div>
 
-                <!-- 文件选择 -->
+                <!-- 文件选择：点击或拖放 -->
                 <div class="form-group">
-                    <label for="fileInput">選擇 .xlsx 文件：</label>
-                    <div class="file-input-wrapper">
-                        <label class="file-input-btn" for="fileInput">選擇文件</label>
+                    <span class="group-label">選擇 .xlsx 文件：</span>
+                    <label class="file-drop" id="fileDrop" for="fileInput" tabindex="0">
+                        <span class="file-drop-title">拖放 .xlsx 文件到這裡，或<span class="file-drop-link">點擊選擇</span></span>
                         <span class="file-name" id="fileName">未選擇文件</span>
-                    </div>
-                    <input type="file" id="fileInput" class="file-input-hidden" accept=".xlsx">
+                        <span class="file-meta" id="fileMeta"></span>
+                    </label>
+                    <input type="file" id="fileInput" class="file-input-hidden" accept=".xlsx" tabindex="-1">
                 </div>
 
                 <!-- 输入列 -->
@@ -75,7 +78,7 @@
 
                 <!-- 工作表范围 -->
                 <div class="form-group">
-                    <label>工作表範圍：</label>
+                    <span class="group-label">工作表範圍：</span>
                     <div class="radio-group">
                         <label class="radio-label">
                             <input type="radio" name="sheetType" value="0" checked>
@@ -98,6 +101,7 @@
 
                 <!-- 开始检查按钮 -->
                 <button id="checkBtn" class="btn-primary">開始檢查</button>
+                <p class="shortcut-hint">快捷鍵：<kbd>Ctrl</kbd> + <kbd>Enter</kbd></p>
 
                 <!-- 进度条 -->
                 <div class="progress-bar" id="progressBar" style="display: none;">
@@ -119,7 +123,7 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="/transtool-py/js/main.js"></script>
+    <script src="/transtool-py/js/xlsx-rows.js?v=20261111"></script>
+    <script src="/transtool-py/js/main.js?v=20261111"></script>
 </body>
 </html>

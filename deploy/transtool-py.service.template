@@ -1,0 +1,20 @@
+# systemd 用户服务（由 deploy/install_service.sh 渲染后安装到 ~/.config/systemd/user/）
+[Unit]
+Description=霸霸組繁中工具 後端
+
+[Service]
+WorkingDirectory=__APP_ROOT__/backend
+ExecStart=__APP_ROOT__/backend/venv/bin/gunicorn -c __APP_ROOT__/deploy/gunicorn.conf.py app:app
+Restart=always
+RestartSec=3
+
+# 内存上限包含检查子进程；超出时只杀掉本服务并自动重启，不拖垮整台机器
+MemoryHigh=__MEMORY_HIGH__
+MemoryMax=__MEMORY_MAX__
+MemorySwapMax=512M
+
+StandardOutput=append:__APP_ROOT__/logs/backend.log
+StandardError=append:__APP_ROOT__/logs/backend.log
+
+[Install]
+WantedBy=default.target
